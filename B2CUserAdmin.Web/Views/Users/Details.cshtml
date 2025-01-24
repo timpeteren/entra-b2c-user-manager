@@ -29,10 +29,12 @@
     <!-- Custom Attributes -->
     <div class="col-md-6">
         <h3>Custom Attributes</h3>
-        @foreach (var customAttribute in Model.CustomAttributes)
+        @* @foreach (var customAttribute in Model.CustomAttributes) *@
+        @foreach (var customAttribute in Model.AdditionalData)
         {
-            <p><strong>@customAttribute.DisplayName:&nbsp;</strong>@Model.User.AdditionalData.Where(x => x.Key ==
-            customAttribute.Id).FirstOrDefault().Value</p>
+            @* <p><strong>@customAttribute.DisplayName:&nbsp;</strong>@Model.User.AdditionalData.Where(x => x.Key ==
+            customAttribute.Id).FirstOrDefault().Value</p> *@
+            <p><strong>@customAttribute.Key:&nbsp;</strong>@customAttribute.Value</p>
         }
 
     </div>

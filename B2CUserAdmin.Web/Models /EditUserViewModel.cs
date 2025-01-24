@@ -1,4 +1,4 @@
-using Microsoft.Graph.Models;
+using Microsoft.Graph.Beta.Models;
 
 namespace B2CUserAdmin.Models;
 
@@ -18,7 +18,8 @@ public class EditUserViewModel
     public string EmployeeId { get; set; }
     public string EmployeeType { get; set; }
     public string OfficeLocation { get; set; }
-    public List<IdentityUserFlowAttribute> CustomAttributes { get; set; }
+    public List<ExtensionProperty> CustomAttributes { get; set; }
+    // public List<IdentityUserFlowAttribute> CustomAttributes { get; set; }
     public Dictionary<string, string> AdditionalData { get; set; }
 
 }

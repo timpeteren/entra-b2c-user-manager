@@ -36,7 +36,9 @@ public class UsersController : Controller
         try
         {
             var user = await _graphAPIService.GetUserAllProperties(id);
-            var customAttributes = await _graphAPIService.GetCustomExtensionAttributes();
+            // var customAttributes = await _graphAPIService.GetCustomExtensionAttributes();
+            var b2cExtensionsAppObjectId = await _graphAPIService.Getb2cExtensionsAppObjectIdAsync();
+            var customAttributes = await _graphAPIService.GetB2CCustomExtensionAttributes(b2cExtensionsAppObjectId);
 
             if (user == null)
             {
@@ -45,6 +47,17 @@ public class UsersController : Controller
 
             model.User = user;
             model.CustomAttributes = customAttributes;
+
+            var userAdditionalData = user.AdditionalData;
+            var additionalDataAsString = new Dictionary<string, string>();
+
+            foreach (var item in userAdditionalData)
+            {
+                additionalDataAsString[item.Key] = item.Value?.ToString();
+            }
+
+            model.AdditionalData = additionalDataAsString;
+
         }
         catch (Exception ex)
         {
@@ -66,7 +79,9 @@ public class UsersController : Controller
         try
         {
             var user = await _graphAPIService.GetUserAllProperties(id);
-            var customAttributes = await _graphAPIService.GetCustomExtensionAttributes();
+            // var customAttributes = await _graphAPIService.GetCustomExtensionAttributes();
+            var b2cExtensionsAppObjectId = await _graphAPIService.Getb2cExtensionsAppObjectIdAsync();
+            var customAttributes = await _graphAPIService.GetB2CCustomExtensionAttributes(b2cExtensionsAppObjectId);
 
             if (user == null)
             {
@@ -118,7 +133,7 @@ public class UsersController : Controller
     {
         try
         {
-            var user = new Microsoft.Graph.Models.User
+            var user = new Microsoft.Graph.Beta.Models.User
             {
                 Id = model.Id,
                 DisplayName = model.DisplayName,

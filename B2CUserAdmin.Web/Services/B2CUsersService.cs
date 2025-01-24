@@ -1,6 +1,6 @@
 using Azure.Identity;
-using Microsoft.Graph;
-using Microsoft.Graph.Models;
+using Microsoft.Graph.Beta;
+using Microsoft.Graph.Beta.Models;
 using System.Reflection;
 namespace B2CUserAdmin.Web.Services;
 
@@ -48,7 +48,7 @@ public class B2CUsersService
         return users.Value;
     }
 
-    public async Task<User> GetUserAsync(string userId)
+    public async Task<User> GetUserAsync(string? userId)
     {
         return await _graphServiceClient.Users[userId.ToString()]
             .GetAsync();
@@ -56,8 +56,44 @@ public class B2CUsersService
 
     public async Task<User> GetUserAllProperties(string userId)
     {
-        var b2cAppId = await GetB2CExtensionsAppIdAsync();
-        var customAttributes = await GetCustomExtensionAttributes();
+        var b2cExtensionsAppObjectId = await Getb2cExtensionsAppObjectIdAsync();
+        
+        #region ChatGPT
+        // try
+        // {
+        //     // Directly call GetAsync without .Request()
+        //     var applicationExtensionProperties = GetB2CCustomExtensionAttributes(b2cExtensionsAppObjectId);
+
+        //     // var customAttributes = new System.Collections.Generic.List<string>();
+
+        //     // Display extension properties
+        //     if (applicationExtensionProperties != null)
+        //     {
+        //         foreach (var extensionProperty in applicationExtensionProperties)
+        //         {
+        //             Console.WriteLine($"Property -name: {extensionProperty.Name} -id: {extensionProperty.Id} -dataType: {extensionProperty.DataType}");
+        //             // customAttributes = extensionProperty.Name.ToList();
+        //         }
+
+        //         // var customAttributesArray = customAttributes.Select(attr => attr.Id).ToArray();
+        //     }
+        //     else
+        //     {
+        //         Console.WriteLine("No extension properties found.");
+        //     }
+        // }
+        // catch (Exception ex)
+        // {
+        //     Console.WriteLine($"Error retrieving application: {ex.Message}");
+        // }
+        #endregion
+
+        #region User flows
+        // Doesn't work because the Identity User Flow attributes does not include the B2C custom attributes
+
+        // var customAttributes = await GetCustomExtensionAttributes();
+        var customAttributes = await GetB2CCustomExtensionAttributes(b2cExtensionsAppObjectId);
+
         var baseProperties = new[]
         {
             "identities", "displayName", "givenName", "surname", "userPrincipalName", "accountEnabled",
@@ -68,14 +104,32 @@ public class B2CUsersService
             "state", "streetAddress", "city", "zipCode", "usageLocation", "id", "userType", "jobTitle", "companyName", "employeeType","businessPhone","mobilePhone"
         };
 
-        var customAttributesArray = customAttributes.Select(attr => attr.Id).ToArray();
-        var allProperties = baseProperties.Concat(customAttributesArray).ToArray();
+        // var customAttributesArray = customAttributes.Select(attr => attr.Id).ToArray();
+        var customAttributesB2CArray = customAttributes.Select(attr => attr.Name).ToArray();
+        // var customAttributesArray = new[]
+        // {
+        //     "extension_e56598d21fdb4d56a12c769745dafc74_lastSignInDateTime",
+        //     "extension_e56598d21fdb4d56a12c769745dafc74_IdentityServerValidation",
+        //     "extension_e56598d21fdb4d56a12c769745dafc74_isEmailUser"
+        // };
+        
+        var allProperties = baseProperties.Concat(customAttributesB2CArray).ToArray();
+        #endregion
+
+        var b2cProperties = new [] 
+            {
+                "displayName", "id", "givenName", "surname", "userPrincipalName", "accountEnabled",
+                "createdDateTime", "signInSessionsValidFromDateTime ", "otherMails", "city", "userType"
+            };
+
+        // var allProperties = b2cProperties.Concat(customb2cAttributesArray).ToArray();
 
         // Make a call to Microsoft Graph to get the user with the specified properties.
         var user = await _graphServiceClient.Users[userId.ToString()]
             .GetAsync(requestConfiguration =>
             {
                 requestConfiguration.QueryParameters.Select = allProperties;
+                // requestConfiguration.QueryParameters.Select = b2cProperties;
 
             });
 
@@ -88,23 +142,29 @@ public class B2CUsersService
             .PatchAsync(updatedUser);
     }
 
+    public async Task<List<ExtensionProperty>> GetB2CCustomExtensionAttributes(string b2cExtensionsAppObjectId)
+    {
+        var b2cExtensionProperties = await _graphServiceClient.Applications[b2cExtensionsAppObjectId].ExtensionProperties
+                .GetAsync();
+        return b2cExtensionProperties.Value.Where(x => x.Name.StartsWith("extension_")).ToList();
+    }
+
     public async Task<List<IdentityUserFlowAttribute>> GetCustomExtensionAttributes()
     {
         var extensionProperties = await _graphServiceClient.Identity.UserFlowAttributes.GetAsync();
         return extensionProperties.Value.Where(x => x.Id.StartsWith("extension_")).ToList();
     }
 
-    public async Task<string> GetB2CExtensionsAppIdAsync()
+    public async Task<string> Getb2cExtensionsAppObjectIdAsync()
     {
         try
         {
             var apps = await _graphServiceClient.Applications.GetAsync(requestConfiguration =>
             {
-                //requestConfiguration.QueryParameters.Select = new[] { "id", };
                 requestConfiguration.QueryParameters.Filter = "startswith(displayName, 'b2c-extensions-app')";
             });
 
-            return apps.Value.FirstOrDefault().AppId;
+            return apps.Value.FirstOrDefault().Id;
         }
         catch (Exception ex)
         {

@@ -59,12 +59,13 @@
         <!-- Custom Attributes Column -->
         <div class="col-md-6">
             <h3>Custom Attributes</h3>
-            @foreach (var customAttribute in Model.CustomAttributes)
+            @* @foreach (var customAttribute in Model.CustomAttributes) *@
+            @foreach (var customAttribute in Model.AdditionalData)
             {
                 <div class="mb-3">
-                    <label>@customAttribute.DisplayName</label>
+                    <label>@customAttribute.Key</label>
 
-                    @if (customAttribute.DataType == Microsoft.Graph.Models.IdentityUserFlowAttributeDataType.Boolean)
+                    @* @if (customAttribute == Microsoft.Graph.Beta.Models.IdentityUserFlowAttributeDataType.Boolean)
                     {
 
                         bool isSelected = Model.AdditionalData.ContainsKey(customAttribute.Id) &&
@@ -87,11 +88,12 @@
 
 
                     }
-                    else if (customAttribute.DataType == Microsoft.Graph.Models.IdentityUserFlowAttributeDataType.String)
+                    else if (customAttribute.DataType == Microsoft.Graph.Beta.Models.IdentityUserFlowAttributeDataType.String) *@
+                    if (customAttribute != null)
                     {
-                        <input type="text" name="@($"AdditionalData[{customAttribute.Id}]")"
-                            id="@($"AdditionalData[{customAttribute.Id}]")"
-                            value="@(Model.AdditionalData.ContainsKey(customAttribute.Id) ? Model.AdditionalData[customAttribute.Id].ToString().Trim() : "") "
+                        <input type="text" name="@($"AdditionalData[{customAttribute.Value}]")"
+                            id="@($"AdditionalData[{customAttribute.Key}]")"
+                            value="@(Model.AdditionalData.ContainsKey(customAttribute.Key) ? Model.AdditionalData[customAttribute.Key].ToString().Trim() : "") "
                             class="form-control" />
                     }
                 </div>
